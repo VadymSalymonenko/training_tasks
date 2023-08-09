@@ -1,3 +1,5 @@
+// Link: https://adventofcode.com/2022/day/11
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

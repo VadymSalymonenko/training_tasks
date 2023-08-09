@@ -1,3 +1,5 @@
+// Link: https://adventofcode.com/2022/day/8
+
 #include <stdio.h>
 #include <stdbool.h>
 
