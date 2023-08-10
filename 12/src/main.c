@@ -25,7 +25,7 @@ typedef struct {
     Point parent;  // Only this field is required for now
 } Node;
 
-Point cameFrom[MAX_SIZE][MAX_SIZE];  // To store parent of each point
+Point came_from[MAX_SIZE][MAX_SIZE];  // To store parent of each point
 
 Point start, end;
 int row = 0, col = 0;
@@ -109,38 +109,38 @@ int get_heuristic(Point a, Point b) {
     return manhattan_distance + height_difference;
 }
 
-bool is_in_closed_list(Point p, Point closedList[], int closedListCount) {
-    for (int i = 0; i < closedListCount; i++) {
-        if (closedList[i].x == p.x && closedList[i].y == p.y) return true;
+bool is_in_closed_list(Point p, Point closed_list[], int closed_list_count) {
+    for (int i = 0; i < closed_list_count; i++) {
+        if (closed_list[i].x == p.x && closed_list[i].y == p.y) return true;
     }
     return false;
 }
 
-bool is_in_open_list(Point p, Point openList[], int openListCount) {
-    for (int i = 0; i < openListCount; i++) {
-        if (openList[i].x == p.x && openList[i].y == p.y) return true;
+bool is_in_open_list(Point p, Point open_list[], int open_list_count) {
+    for (int i = 0; i < open_list_count; i++) {
+        if (open_list[i].x == p.x && open_list[i].y == p.y) return true;
     }
     return false;
 }
 
-int find_index_of_lowest_f(Point openList[], int openListCount) {
-    int lowestIndex = 0;
-    for (int i = 1; i < openListCount; i++) {
-        if (fScore[openList[i].y][openList[i].x] < fScore[openList[lowestIndex].y][openList[lowestIndex].x]) {
-            lowestIndex = i;
+int find_index_of_lowest_f(Point open_list[], int open_list_count) {
+    int lowest_index = 0;
+    for (int i = 1; i < open_list_count; i++) {
+        if (fScore[open_list[i].y][open_list[i].x] < fScore[open_list[lowest_index].y][open_list[lowest_index].x]) {
+            lowest_index = i;
         }
     }
-    return lowestIndex;
+    return lowest_index;
 }
 
 
-void remove_point_from_open_list(Point p, Point openList[], int *openListCount) {
-    for (int i = 0; i < *openListCount; i++) {
-        if (openList[i].x == p.x && openList[i].y == p.y) {
-            for (int j = i; j < *openListCount - 1; j++) {
-                openList[j] = openList[j+1];
+void remove_point_from_open_list(Point p, Point open_list[], int *open_list_count) {
+    for (int i = 0; i < *open_list_count; i++) {
+        if (open_list[i].x == p.x && open_list[i].y == p.y) {
+            for (int j = i; j < *open_list_count - 1; j++) {
+                open_list[j] = open_list[j+1];
             }
-            (*openListCount)--;
+            (*open_list_count)--;
             break;
         }
     }
@@ -150,52 +150,52 @@ void remove_point_from_open_list(Point p, Point openList[], int *openListCount) 
 
 int reconstruct_path(Point end) {
     Point path[MAX_SIZE*MAX_SIZE];
-    int pathLength = 0;
+    int path_length = 0;
 
     Point current = end;
     while (!(current.x == start.x && current.y == start.y)) {
-        path[pathLength++] = current;
-        current = cameFrom[current.y][current.x];
+        path[path_length++] = current;
+        current = came_from[current.y][current.x];
     }
-    path[pathLength++] = start;
-    return pathLength-1;
+    path[path_length++] = start;
+    return path_length-1;
 }
 
 int a_star() {
-    Point openList[MAX_SIZE*MAX_SIZE];
-    int openListCount = 0;
+    Point open_list[MAX_SIZE*MAX_SIZE];
+    int open_list_count = 0;
 
-    Point closedList[MAX_SIZE*MAX_SIZE];
-    int closedListCount = 0;
+    Point closed_list[MAX_SIZE*MAX_SIZE];
+    int closed_list_count = 0;
 
-    openList[openListCount++] = start;
+    open_list[open_list_count++] = start;
 
-    while (openListCount > 0) {
-        int currentIndex = find_index_of_lowest_f(openList, openListCount);
-        Point currentPoint = openList[currentIndex];
-        if (currentPoint.x == end.x && currentPoint.y == end.y) {
+    while (open_list_count > 0) {
+        int current_index = find_index_of_lowest_f(open_list, open_list_count);
+        Point current_point = open_list[current_index];
+        if (current_point.x == end.x && current_point.y == end.y) {
             return reconstruct_path(end);;
         }
 
-        remove_point_from_open_list(currentPoint, openList, &openListCount);
-        closedList[closedListCount++] = currentPoint;
+        remove_point_from_open_list(current_point, open_list, &open_list_count);
+        closed_list[closed_list_count++] = current_point;
 
         Point neighbors[4];
-        int neighbors_count = get_neighbors(currentPoint, neighbors, row, col);
+        int neighbors_count = get_neighbors(current_point, neighbors, row, col);
 
         for (int i = 0; i < neighbors_count; i++) {
             Point neighbor = neighbors[i];
-            if (is_in_closed_list(neighbor, closedList, closedListCount)) {
+            if (is_in_closed_list(neighbor, closed_list, closed_list_count)) {
                 continue;
             }
-            int tentative_gScore = gScore[currentPoint.y][currentPoint.x] + 1;  // assuming cost is 1 for each move
-            if (!is_in_open_list(neighbor, openList, openListCount) || tentative_gScore < gScore[neighbor.y][neighbor.x]) {
-                cameFrom[neighbor.y][neighbor.x] = currentPoint;  // Keep track of the parent node
+            int tentative_gScore = gScore[current_point.y][current_point.x] + 1;  // assuming cost is 1 for each move
+            if (!is_in_open_list(neighbor, open_list, open_list_count) || tentative_gScore < gScore[neighbor.y][neighbor.x]) {
+                came_from[neighbor.y][neighbor.x] = current_point;  // Keep track of the parent node
                 gScore[neighbor.y][neighbor.x] = tentative_gScore;
                 fScore[neighbor.y][neighbor.x] = tentative_gScore + get_heuristic(neighbor, end);
 
-                if (!is_in_open_list(neighbor, openList, openListCount)) {
-                    openList[openListCount++] = neighbor;
+                if (!is_in_open_list(neighbor, open_list, open_list_count)) {
+                    open_list[open_list_count++] = neighbor;
                 }
             }
         }
