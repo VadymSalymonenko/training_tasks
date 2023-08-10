@@ -1,0 +1,4 @@
+D:/C_progs/_c_training_git/training_tasks/c_tasks/10/build/CMakeFiles/part1.dir
+D:/C_progs/_c_training_git/training_tasks/c_tasks/10/build/CMakeFiles/part2.dir
+D:/C_progs/_c_training_git/training_tasks/c_tasks/10/build/CMakeFiles/edit_cache.dir
+D:/C_progs/_c_training_git/training_tasks/c_tasks/10/build/CMakeFiles/rebuild_cache.dir
