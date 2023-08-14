@@ -2,13 +2,15 @@
 
 #include <stdio.h>
 
-enum {
+typedef enum{
     ROCK = 1,
     PAPER,
-    SCISSORS
-};
+    SCISSORS,
+    INVALID = -1
+} MoveType;
 
-int decode_move(char move) {
+
+MoveType decode_move(char move) {
     switch (move) {
         case 'A':  // Rock
             return ROCK;
@@ -17,7 +19,7 @@ int decode_move(char move) {
         case 'C':  // Scissors
             return SCISSORS;
         default:
-            return 0;
+            return INVALID;
     }
 }
 
@@ -57,8 +59,14 @@ int get_score_for_outcome(char outcome) {
 
 int main() {
     FILE *file = fopen("../strategy.txt", "r");
+    if (!file) {
+        printf("\033[1;31m"); 
+        perror("Error opening file"); 
+        printf("\033[0m");  
+        return 1;
+    }
     char opponent_move_char, desired_outcome;
-    int opponent_move, your_move;
+    MoveType opponent_move, your_move;
     int your_total_score = 0;
 
     while (fscanf(file, " %c %c", &opponent_move_char, &desired_outcome) == 2) {

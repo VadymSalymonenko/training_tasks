@@ -2,15 +2,16 @@
 
 #include <stdio.h>
 
-enum {
+typedef enum{
     ROCK = 1,
     PAPER,
-    SCISSORS
-};
+    SCISSORS,
+    INVALID = -1
+} MoveType;
 
 
-int decode_move(char move) {
-    switch (move) {
+MoveType decode_move(char move_char) {
+    switch (move_char) {
         case 'A': case 'X':  // Rock
             return ROCK;
         case 'B': case 'Y':  // Paper
@@ -18,7 +19,7 @@ int decode_move(char move) {
         case 'C': case 'Z':  // Scissors
             return SCISSORS;
         default:
-            return 0;
+            return INVALID;
     }
 }
 
@@ -41,8 +42,15 @@ int get_round_winner(int opponent_move, int your_move) {
 
 int main() {
     FILE *file = fopen("../strategy.txt", "r");
+    if (!file) {
+        printf("\033[1;31m"); 
+        perror("Error opening file"); 
+        printf("\033[0m");  
+        return 1;
+    }
+
     char opponent_move_char, your_move_char;
-    int opponent_move, your_move;
+    MoveType opponent_move, your_move;
     int your_total_score = 0, opponent_total_score = 0;
 
     while (fscanf(file, " %c %c", &opponent_move_char, &your_move_char) == 2) {
