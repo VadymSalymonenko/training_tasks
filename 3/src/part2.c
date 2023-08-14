@@ -39,22 +39,24 @@ unsigned long long get_common_item_priority(char* str1, char* str2, char* str3) 
 
 int main() {
     FILE* file = fopen("../data.txt", "r");
-    if (file == NULL) {
-        printf("Error opening file\n");
+    if (!file) {
+        printf("\033[1;31m");
+        perror("Failed to open data.txt");
+        printf("\033[0m"); 
         return 1;
     }
 
     char str1[MAX_LINE_LENGTH], str2[MAX_LINE_LENGTH], str3[MAX_LINE_LENGTH];
-    unsigned int total_priority = 0;
+    unsigned int cumulativePriority = 0;
     while (fgets(str1, MAX_LINE_LENGTH, file) && fgets(str2, MAX_LINE_LENGTH, file) && fgets(str3, MAX_LINE_LENGTH, file)) {
 
         str1[strcspn(str1, "\n")] = 0;
         str2[strcspn(str2, "\n")] = 0;
         str3[strcspn(str3, "\n")] = 0;
-        total_priority += get_common_item_priority(str1, str2, str3);
+        cumulativePriority += get_common_item_priority(str1, str2, str3);
     }
 
-    printf("Total priority: %u\n", total_priority);
+    printf("Total priority: %u\n", cumulativePriority);
     fclose(file);
     return 0;
 }

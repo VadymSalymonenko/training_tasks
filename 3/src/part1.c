@@ -3,26 +3,26 @@
 #include <stdio.h>
 #include <string.h>
 
-int char_to_index(char c) {
+int get_item_priority(char c) {
     if (c >= 'a' && c <= 'z') {
         return c - 'a';
     } else if (c >= 'A' && c <= 'Z') {
         return c - 'A' + 26;
-    } else {
-        return -1;
-    }
+    } 
+    return -1;
 }
 
-int get_common_item_priority(char* str) {
+int find_common_item_priority(char* rucksack) {
     unsigned long long common;
-    int n = strlen(str);
+    int n = strlen(rucksack);
     unsigned long long half1 = 0, half2 = 0;
 
-    for (int i = 0; i < n / 2; i++) {
-        half1 |= (unsigned long long)1 << char_to_index(str[i]);
-    }
-    for (int i = n / 2; i < n; i++) {
-        half2 |= (unsigned long long)1 << char_to_index(str[i]);
+    for (int i = 0; i < n; i++) {
+        if(i < n / 2){
+            half1 |= (unsigned long long)1 << get_item_priority(rucksack[i]);
+        }else{
+            half2 |= (unsigned long long)1 << get_item_priority(rucksack[i]);
+        }
     }
     common = half1 & half2;
     for (int i = 0; i < 52; i++) {
@@ -36,23 +36,25 @@ int get_common_item_priority(char* str) {
 
 int main() {
     FILE* file = fopen("../data.txt", "r");
-    if (file == NULL) {
-        printf("Could not open file data.txt\n");
+    if (!file) {
+        printf("\033[1;31m");
+        perror("Failed to open data.txt");
+        printf("\033[0m"); 
         return 1;
     }
 
-    char line[1000];
-    int total_priority = 0;
+    char rucksack[1000];
+    int cumulativePriority  = 0;
 
-    while (fgets(line, sizeof(line), file)) {
+    while (fgets(rucksack, sizeof(rucksack), file)) {
         
-        line[strcspn(line, "\n")] = 0;  // Remove the newline
-        total_priority += get_common_item_priority(line);
+        rucksack[strcspn(rucksack, "\n")] = 0;  // Remove the newline
+        cumulativePriority  += find_common_item_priority(rucksack);
     }
 
     fclose(file);
 
-    printf("Total priority: %d\n", total_priority);
+    printf("Total priority: %d\n", cumulativePriority );
 
     return 0;
 }
