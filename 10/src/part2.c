@@ -1,5 +1,3 @@
-// Link: https://adventofcode.com/2022/day/10
-
 #include <stdio.h>
 #include <string.h>
 
@@ -7,51 +5,54 @@
 #define SCREEN_WIDTH 40
 #define SCREEN_HEIGHT 6
 
-int x_value = 1; // Global variable for the value of the X register
-char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1]; // +1 for null terminator
+typedef struct {
+    int x_value;
+    int current_cycle;
+    char screen[SCREEN_HEIGHT][SCREEN_WIDTH + 1]; // +1 for null terminator
+} CPU;
 
-void compute_cycle(const char *line, int *current_cycle);
-void update_screen(int current_cycle);
-int is_sprite_pixel(int position);
+void compute_cycle(const char *line, CPU *cpu);
+void update_screen(CPU *cpu);
+int is_sprite_pixel(int position, int x_value);
 
-
-void compute_cycle(const char *line, int *current_cycle) {
+void compute_cycle(const char *line, CPU *cpu) {
     if (strncmp(line, "noop", 4) == 0) {
-        (*current_cycle)++;
-        update_screen(*current_cycle);
+        cpu->current_cycle++;
+        update_screen(cpu);
     } else if (strncmp(line, "addx", 4) == 0) {
         int value;
         sscanf(line, "addx %d", &value);
 
-        (*current_cycle)++;
-        update_screen(*current_cycle);
+        cpu->current_cycle++;
+        update_screen(cpu);
 
-        (*current_cycle)++;
-        update_screen(*current_cycle);
-        x_value += value;
+        cpu->current_cycle++;
+        update_screen(cpu);
+        cpu->x_value += value;
     }
 }
-void update_screen(int current_cycle) {
-    int row = (current_cycle - 1) / SCREEN_WIDTH;
-    int col = (current_cycle - 1) % SCREEN_WIDTH;
 
-    if (is_sprite_pixel(col)) {
-        screen[row][col] = '#';
+void update_screen(CPU *cpu) {
+    int row = (cpu->current_cycle - 1) / SCREEN_WIDTH;
+    int col = (cpu->current_cycle - 1) % SCREEN_WIDTH;
+
+    if (is_sprite_pixel(col, cpu->x_value)) {
+        cpu->screen[row][col] = '#';
     } else {
-        screen[row][col] = '.';
+        cpu->screen[row][col] = '.';
     }
 
-    // Якщо ми досягли кінця рядка, виведіть його на друк
-    if (current_cycle % SCREEN_WIDTH == 0) {
-        printf("%s\n", screen[row]);
+    // If we've reached the end of the row, print it
+    if (cpu->current_cycle % SCREEN_WIDTH == 0) {
+        printf("%s\n", cpu->screen[row]);
     }
 }
 
-int is_sprite_pixel(int position) {
+int is_sprite_pixel(int position, int x_value) {
     int sprite_start = x_value - 1;
     int sprite_end = x_value + 1;
 
-    // Якщо спрайт виходить за межі екрану зліва або справа
+    // If the sprite goes off the screen on the left or right
     if (sprite_start < 0) sprite_start += SCREEN_WIDTH;
     if (sprite_end >= SCREEN_WIDTH) sprite_end -= SCREEN_WIDTH;
 
@@ -60,30 +61,27 @@ int is_sprite_pixel(int position) {
 
 int main() {
     FILE *file = fopen("../data.txt", "r");
-    if (file == NULL) {
-        printf("Error: Unable to open data.txt\n");
+    if (!file) {
+        printf("\033[1;31m");
+        perror("Failed to open data.txt");
+        printf("\033[0m"); 
         return 1;
     }
+
+    CPU cpu = { .x_value = 1, .current_cycle = 0 };
 
     // Initialize the screen with dots
     for (int i = 0; i < SCREEN_HEIGHT; i++) {
         for (int j = 0; j < SCREEN_WIDTH; j++) {
-            screen[i][j] = '.';
+            cpu.screen[i][j] = '.';
         }
-        screen[i][SCREEN_WIDTH] = '\0';
+        cpu.screen[i][SCREEN_WIDTH] = '\0';
     }
 
     char line[MAX_LINE];
-    int current_cycle = 0;  // Current cycle number
-
     while (fgets(line, sizeof(line), file)) {
-        compute_cycle(line, &current_cycle);
+        compute_cycle(line, &cpu);
     }
-
-   // // Print the final screen state
-   // for (int i = 0; i < SCREEN_HEIGHT; i++) {
-   //     printf("%s\n", screen[i]);
-   // }
 
     fclose(file);
     return 0;
