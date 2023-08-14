@@ -6,31 +6,38 @@
 #define MAX_INT_NUMBER_LENGTH 12
 #define TOP_LIST_SIZE 3
 
-void print_top_list(int* elf_calories, int* elf_calories_numbers, int size){
-    for(int i = size; i > 0; i--){
-        printf("place %d: calories -- %d, id: %d\n", size-i+1, elf_calories[i-1], elf_calories_numbers[i-1]);
+// Структура для зберігання ID ельфа та загальної кількості калорій.
+typedef struct {
+    unsigned int id;
+    unsigned int totalCalories;
+} Elf;
+
+void print_top_elves(const Elf topElves[]) {
+    for (int i = TOP_LIST_SIZE - 1; i >= 0; i--) {
+        printf("Place %d: Elf ID -- %d, Calories -- %d\n", TOP_LIST_SIZE - i, topElves[i].id, topElves[i].totalCalories);
     }
 }
-void print_sum_of_elements(int arr[], int size) {
+
+void print_sum_of_elements(const Elf elfs[]) {
     int sum = 0;
-    for (int i = 0; i < size; i++) {
-        sum += arr[i];
+    for (int i = 0; i < TOP_LIST_SIZE; i++) {
+        sum += elfs[i].totalCalories;
     }
     printf("total sum: %d\n", sum);
 }
 
-int find_insertion_index(int arr[], int size, int key) {
+unsigned int find_insertion_index(Elf elfs[],unsigned int key) {
     int start = 0;
-    int end = size - 1;
+    int end = TOP_LIST_SIZE - 1;
 
     while (start <= end) {
         int mid = (start + end) / 2;
 
-        if (arr[mid] == key) {
+        if (elfs[mid].totalCalories == key) {
             return mid + 1;
         }
 
-        if (arr[mid] < key) {
+        if (elfs[mid].totalCalories < key) {
             start = mid + 1;
         } else {
             end = mid - 1;
@@ -40,61 +47,51 @@ int find_insertion_index(int arr[], int size, int key) {
     return start;
 }
 
-void update_elf_calories(int* elf_calories, int* elf_calories_numbers, int size, int new_calories, int curr_elf_number) {
-
-
-    if (new_calories <= elf_calories[0]) {
-        return;
-    }
-
-    int insertion_index = find_insertion_index(elf_calories, size, new_calories);
+void update_elf_calories(Elf* elfs, int new_calories, int curr_elf_number) {
+    int insertion_index = find_insertion_index(elfs, new_calories);
 
     for (int i = 1; i < insertion_index; i++) {
-        elf_calories[i - 1] = elf_calories[i];
-        elf_calories_numbers[i - 1] = elf_calories_numbers[i];
+        elfs[i - 1] = elfs[i];
     }
-
-    elf_calories[insertion_index - 1] = new_calories;
-    elf_calories_numbers[insertion_index - 1] = curr_elf_number;
+    elfs[insertion_index - 1].totalCalories = new_calories;
+    elfs[insertion_index - 1].id = curr_elf_number;
 }
-
-
 int main() {
     FILE *file;
     file = fopen("../data.txt", "r");
 
-    
     if (file == NULL) {
         printf("Failed to open file\n");
         return 1;
     }
 
-    int elf_calories[TOP_LIST_SIZE] = {0};
-    int elf_calories_numbers[TOP_LIST_SIZE] = {0};
+    Elf elfs[TOP_LIST_SIZE];
+    for(int i = 0; i < TOP_LIST_SIZE; i++) {
+        elfs[i].id = 0;
+        elfs[i].totalCalories = 0;
+    }
 
-    int curr_total_food = 0;
-    int curr_elf_number = 0;
+    unsigned int curr_total_food = 0;
+    unsigned int curr_elf_number = 0;
     
     char line[MAX_INT_NUMBER_LENGTH];
     while (fgets(line, sizeof(line), file)) {
         
         if (line[0] == '\n' || line[0] == '\r') {
             
-            update_elf_calories(elf_calories, elf_calories_numbers, TOP_LIST_SIZE, curr_total_food, curr_elf_number);
-            printf("test info -- %d\n", curr_total_food);
+            update_elf_calories(elfs, curr_total_food, curr_elf_number);
+            //printf("test info -- %d\n", curr_total_food);
 
             curr_elf_number++;
             curr_total_food = 0;
         } else {
-            int input_num = atoi(line);
-            curr_total_food += input_num;
+            curr_total_food += atoi(line);
         }
     }
-    update_elf_calories(elf_calories, elf_calories_numbers, TOP_LIST_SIZE, curr_total_food, curr_elf_number);
-    printf("test info -- %d\n", curr_total_food);
+    update_elf_calories(elfs, curr_total_food, curr_elf_number);
 
-    print_top_list(elf_calories, elf_calories_numbers, TOP_LIST_SIZE);
-    print_sum_of_elements(elf_calories, TOP_LIST_SIZE);
+    print_top_elves(elfs);
+    print_sum_of_elements(elfs);
 
     fclose(file); 
     
