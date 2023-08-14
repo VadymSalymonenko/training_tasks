@@ -4,14 +4,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_CONTENTS 100
+#define START_CAPACITY 5
 #define SPACE_TO_FREE 5349983
 
 typedef struct file_or_dir {
     char name[256];
     int is_directory;                            // 1 if directory, 0 if file
     int size;                                    // size of the directory or file
-    struct file_or_dir* contents[MAX_CONTENTS];  // children if it's a directory
+    int content_count;
+    struct file_or_dir** contents;                // children if it's a directory
     struct file_or_dir* parent;                  // pointer to the parent directory
 } file_or_dir;
 
@@ -20,37 +21,33 @@ file_or_dir* root;
 
 file_or_dir* create_directory(const char* name) {
     file_or_dir* new_dir = malloc(sizeof(file_or_dir));
+    new_dir->contents = malloc(sizeof(file_or_dir)*START_CAPACITY);
     strcpy(new_dir->name, name);
     new_dir->is_directory = 1;
     new_dir->size = 0;
     new_dir->parent = NULL;
-    for (int i = 0; i < MAX_CONTENTS; i++) {
-        new_dir->contents[i] = NULL;
-    }
+    new_dir->content_count = 0;
     return new_dir;
 }
 
 file_or_dir* create_file(const char* name, int size) {
     file_or_dir* new_file = malloc(sizeof(file_or_dir));
+    new_file->contents = malloc(sizeof(file_or_dir)*START_CAPACITY);
     strcpy(new_file->name, name);
     new_file->is_directory = 0;
     new_file->size = size;
     new_file->parent = NULL;
-    for (int i = 0; i < MAX_CONTENTS; i++) {
-        new_file->contents[i] = NULL;
-    }
+    new_file->content_count = 0;
     return new_file;
 }
 
 
 void add_to_directory(file_or_dir* parent, file_or_dir* child) {
-    for (int i = 0; i < MAX_CONTENTS; i++) {
-        if (!parent->contents[i]) {
-            parent->contents[i] = child;
-            child->parent = parent;
-            break;
-        }
+    if(parent->content_count % 10 == 0) {
+        parent->contents = realloc(parent->contents, sizeof(file_or_dir*) * (parent->content_count + 10));
     }
+    parent->contents[parent->content_count++] = child;
+    child->parent = parent;
     if (child->is_directory == 0) { // If it's a file, update the parent directory size
         parent->size += child->size;
     }
@@ -66,7 +63,7 @@ void traverse_tree(file_or_dir* root, int depth) {
     if (root->is_directory) {
         printf("Directory: %s\n", root->name);
         // If it is a directory, iterate over its contents
-        for (int i = 0; i < MAX_CONTENTS && root->contents[i]; i++) {
+        for (int i = 0; i < root->content_count; i++) {
             traverse_tree(root->contents[i], depth + 1);
         }
     } else {
@@ -96,7 +93,7 @@ void parse_filesystem() {
         } else {
         file_or_dir* next_dir = NULL;
 
-        for (int i = 0; i < MAX_CONTENTS && current_dir->contents[i]; i++) {
+        for (int i = 0; i < current_dir->content_count; i++) {
             if (strcmp(current_dir->contents[i]->name, dir_name) == 0) {
                 next_dir = current_dir->contents[i];
                 break;
@@ -139,7 +136,7 @@ void parse_filesystem() {
 int get_directory_size(file_or_dir* directory, int* total_sum) {
     int size = 0;
 
-    for (int i = 0; i < MAX_CONTENTS && directory->contents[i]; ++i) {
+    for (int i = 0; i < directory->content_count; ++i) {
         if (directory->contents[i]->is_directory) {
             size += get_directory_size(directory->contents[i], total_sum);
         } else {
@@ -165,7 +162,7 @@ int smallest_size_over_limit = INT_MAX;
 
 int get_min_directory_size(file_or_dir* directory) {
     int size = 0;
-    for (int i = 0; i < MAX_CONTENTS && directory->contents[i]; ++i) {
+    for (int i = 0; i < directory->content_count; ++i) {
         if (directory->contents[i]->is_directory) {
             size += get_min_directory_size(directory->contents[i]);
         } else {
