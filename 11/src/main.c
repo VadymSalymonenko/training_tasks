@@ -6,9 +6,9 @@
 
 #define MAX_ITEMS 500  // maximum number of items for each monkey
 #define NUM_MONKEYS 8  // number of monkeys
-#define ROUNDS 20      // number of rounds
+#define ROUNDS 10000      // number of rounds
 
-#define TASK_PART 1    
+#define TASK_PART 2    
 
 
 typedef enum {
@@ -45,72 +45,66 @@ long long square(long long a, long long b) {
     return a * a; 
 }
 
+// Read initial subjects from the file for a given monkey
+void read_initial_subjects(FILE *file, Monkey *monkey) {
+    fscanf(file, " Starting items:");
+    monkey->num_items = 0;
+    int temp = 0;
+    while (fscanf(file, " %d,", &temp) == 1) {
+        monkey->starting_items[(monkey->num_items)] = temp;
+        monkey->num_items++;
+    }
+}
+
+// Read operations from the file for a given monkey
+void read_operations(FILE *file, Monkey *monkey) {
+    char operation[10];
+    char next_value[10];
+    fscanf(file, " Operation: new = old %s %s", operation, next_value);
+    // Define the type of operation and link to corresponding function
+    if (strcmp(operation, "*") == 0) {
+        if (strcmp(next_value, "old") == 0) {
+            monkey->op_type = SQUARE;
+            monkey->operation = square;
+            monkey->op_value = -1;
+        } else {
+            monkey->op_type = MULTIPLY;
+            monkey->operation = multiply;
+            monkey->op_value = atoi(next_value);
+        }
+    } else {
+        monkey->op_type = ADD;
+        monkey->operation = add;
+        monkey->op_value = atoi(next_value);
+    }
+}
+
+// Read the divisible test and throw logic from the file for a given monkey
+void read_test_and_throw_logic(FILE *file, Monkey *monkey) {
+    fscanf(file, " Test: divisible by %d", &monkey->test_divisor);
+    fscanf(file, " If true: throw to monkey %d", &monkey->throw_true);
+    fscanf(file, " If false: throw to monkey %d", &monkey->throw_false);
+}
+
 void fill_monkeys_from_file(Monkey monkeys[]) {
     FILE *file = fopen("../data.txt", "r");
     if (!file) {
         perror("Error opening file");
         exit(1);
     }
-
     char buffer[100];
 
     for (int i = 0; i < NUM_MONKEYS; i++) {
-
         fgets(buffer, sizeof(buffer), file);
+        read_initial_subjects(file, &monkeys[i]);
+        read_operations(file, &monkeys[i]);
+        read_test_and_throw_logic(file, &monkeys[i]);
 
-        // read the initial subjects
-        fscanf(file, " Starting items:");
-        monkeys[i].num_items = 0;
-        int temp = 0;
-        while (fscanf(file, " %d,", &temp) == 1) {
-            monkeys[i].starting_items[(monkeys[i].num_items)] = temp;
-            //if(((long long) monkeys[i].starting_items[(monkeys[i].num_items)]) >= INT_MAX){
-            //    monkeys[i].starting_items[(monkeys[i].num_items)] %= INT_MAX;
-            //}
-            monkeys[i].num_items++;
-            
-        }
-        monkeys[i].inspect_num = 0;
-
-        // read the operation
-        char operation[10];
-        char next_value[10];
-        fscanf(file, " Operation: new = old %s %s", operation, next_value);
-
-        // define the type of operation and a link to the corresponding function
-        if (strcmp(operation, "*") == 0) {
-            if (strcmp(next_value, "old") == 0) {
-                monkeys[i].op_type = SQUARE;
-                monkeys[i].operation = square;  
-                monkeys[i].op_value = -1; // value that will not be used
-            } else {
-                monkeys[i].op_type = MULTIPLY;
-                monkeys[i].operation = multiply;  
-                monkeys[i].op_value = atoi(next_value);
-            }
-        } else {
-            monkeys[i].op_type = ADD;
-            monkeys[i].operation = add;  
-            monkeys[i].op_value = atoi(next_value);
-        }
-
-
-
-
-        // read the divisible test
-        fscanf(file, " Test: divisible by %d", &monkeys[i].test_divisor);
-
-        // read where to throw if the value is true/false
-        fscanf(file, " If true: throw to monkey %d", &monkeys[i].throw_true);
-
-        fscanf(file, " If false: throw to monkey %d", &monkeys[i].throw_false);
-
-        fgets(buffer, sizeof(buffer), file);  // read the rest of the line, if any
-
-        // skip an empty line between monkey entries
-        fgets(buffer, sizeof(buffer), file);  
+        // Read the rest of the line, if any
+        fgets(buffer, sizeof(buffer), file);
+        // Skip empty line between monkey entries
+        fgets(buffer, sizeof(buffer), file);
     }
-
     fclose(file);
 }
 
