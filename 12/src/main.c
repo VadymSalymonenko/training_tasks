@@ -27,16 +27,9 @@ typedef struct {
 
 Point came_from[MAX_SIZE][MAX_SIZE];  // To store parent of each point
 
-Point start, end;
-int row = 0, col = 0;
-
-
-
 char is_valid_move(int curr_height, int next_height) {
-    if(curr_height > next_height) return 1;
-    return (abs(curr_height - next_height) <= 1);
+    return curr_height > next_height || abs(curr_height - next_height) <= 1;
 }
-
 int get_neighbors(Point p, Point neighbors[], int row, int col) {
     int count = 0;
     for (int i = 0; i < 4; i++) {
@@ -50,7 +43,7 @@ int get_neighbors(Point p, Point neighbors[], int row, int col) {
     return count;
 }
 
-void print_heightmap() {
+void print_heightmap(int row, int col) {
     for (int i = 0; i < row; i++) {
         for (int j = 0; j < col; j++) {
             printf("%3d", heightmap[i][j]);
@@ -58,8 +51,11 @@ void print_heightmap() {
         printf("\n");
     }
 }
-
-void read_file(char* name){
+void init_heuristic_arrays_cell(int row, int col){
+    gScore[row][col] = INT_MAX;
+    fScore[row][col] = INT_MAX;
+}
+void read_file(char* name, Point* start, Point* end, int* row, int* col){
     FILE *file = fopen(name, "r");
     if (file == NULL) {
         printf("Error opening file!\n");
@@ -67,40 +63,40 @@ void read_file(char* name){
     }
 
     char ch;
+    *row = 0;
+    *col = 0;
     
     while (1) {
         ch = fgetc(file);
         if(ch == EOF){
-            row++;
+            (*row)++;
             break;  
         }
         if (ch == '\n') {
-            row++;
-            col = 0;
+            (*row)++;
+            *col = 0;
             continue;
         }
 
         // Convert characters to their integer values
         if (ch == 'S') {
-            start.x = col;
-            start.y = row;
-            heightmap[row][col] = 1;
+            start->x = *col;
+            start->y = *row;
+            heightmap[*row][*col] = 1;
         } else if (ch == 'E') {
-            end.x = col;
-            end.y = row;
-            heightmap[row][col] = 26; // Assuming z is the highest point
+            end->x = *col;
+            end->y = *row;
+            heightmap[*row][*col] = 26; // Assuming z is the highest point
         } else {
-            heightmap[row][col] = ch - 'a' + 1;
+            heightmap[*row][*col] = ch - 'a' + 1;
         }
-
-        gScore[row][col] = INT_MAX;
-        fScore[row][col] = INT_MAX;
-        
-        col++;
+        init_heuristic_arrays_cell(*row, *col);
+        (*col)++;
     }
 
     fclose(file);
 }
+
 
 int get_heuristic(Point a, Point b) {
     int manhattan_distance = abs(a.x - b.x) + abs(a.y - b.y);
@@ -148,7 +144,7 @@ void remove_point_from_open_list(Point p, Point open_list[], int *open_list_coun
 
 
 
-int reconstruct_path(Point end) {
+int reconstruct_path(Point start, Point end) {
     Point path[MAX_SIZE*MAX_SIZE];
     int path_length = 0;
 
@@ -161,7 +157,7 @@ int reconstruct_path(Point end) {
     return path_length-1;
 }
 
-int a_star() {
+int a_star(Point start, Point end, int row, int col) {
     Point open_list[MAX_SIZE*MAX_SIZE];
     int open_list_count = 0;
 
@@ -174,7 +170,7 @@ int a_star() {
         int current_index = find_index_of_lowest_f(open_list, open_list_count);
         Point current_point = open_list[current_index];
         if (current_point.x == end.x && current_point.y == end.y) {
-            return reconstruct_path(end);;
+            return reconstruct_path(start, end);
         }
 
         remove_point_from_open_list(current_point, open_list, &open_list_count);
@@ -203,16 +199,15 @@ int a_star() {
 
     return -1;
 }
-int find_min_distanse_a_z(){
+int find_min_distanse_a_z(Point end, int row, int col){
     int min = INT_MAX;
     int result  = INT_MAX;
     for (int i = 0; i < row; i++) {
         for (int j = 0; j < col; j++) {
             if(heightmap[i][j] == 1){
-                start.x = j;
-                start.y = i;
-                gScore[start.y][start.x] = 0;
-                result = a_star();
+                Point new_start = {j, i};
+                gScore[new_start.y][new_start.x] = 0;
+                result = a_star(new_start, end, row, col);
                 if(min > result && result >= 0){
                     min = result;
                 }
@@ -228,17 +223,18 @@ int find_min_distanse_a_z(){
 int main() {
     int result = -1;
     int task2_result = -1;
-
-    read_file("data.txt");
+    Point start, end;
+    int row = 0, col = 0;
+    read_file("../data.txt", &start, &end, &row, &col);
     
     gScore[start.y][start.x] = 0;
     fScore[start.y][start.x] = get_heuristic(start, end);
 
     //printf("start x = %d; y = %d.\n",start.x, start.y);
     //printf("end x = %d; y = %d.\n", end.x, end.y);
-    //print_heightmap();
+    //print_heightmap(row, col);
 
-    result = a_star();
+    result = a_star(start, end, row, col);
     if(result >= 0){
         printf("task 1: total length from Start to End= %d\n", result);
     }else{
@@ -246,7 +242,7 @@ int main() {
     }
 
     
-    task2_result = find_min_distanse_a_z();
+    task2_result = find_min_distanse_a_z(end, row, col);
     if(task2_result >= 0){
         printf("task 2: min length from height a to End = %d\n", task2_result);
     }else{
