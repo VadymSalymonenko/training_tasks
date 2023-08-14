@@ -12,16 +12,19 @@ typedef struct {
 
 bool visited[MATRIX_SIZE][MATRIX_SIZE] = {0};
 
+
+void update_visited(point *tail) {
+    visited[tail->x][tail->y] = true;
+}
+
 void move_tail(point *head, point *tail) {
     // If head and tail are on the same line:
     if (head->x == tail->x) { // vertical line
         if (abs(head->y - tail->y) <= 1)return;
-        if (head->y < tail->y) tail->y--;
-        else if (head->y > tail->y) tail->y++;
+        tail->y += (head->y > tail->y) ? 1 : -1;
     } else if (head->y == tail->y) { // horizontal line
         if (abs(head->x - tail->x) <= 1)return;
-        if (head->x < tail->x) tail->x--;
-        else if (head->x > tail->x) tail->x++;
+        tail->x += (head->x > tail->x) ? 1 : -1;
     } 
     // If head and tail are not on the same line:
     else {
@@ -40,7 +43,7 @@ void move_tail(point *head, point *tail) {
     }
 
     // Add the current tail position to the visited ones:
-    visited[tail->x][tail->y] = 1;
+    update_visited(tail);
 }
 
 void move_head(point *head, point *tail, char direction, int steps) {
@@ -55,6 +58,7 @@ void move_head(point *head, point *tail, char direction, int steps) {
     }
 }
 
+
 int main() {
     FILE *file = fopen("../data.txt", "r");
     char direction;
@@ -62,7 +66,7 @@ int main() {
     point head = {MATRIX_SIZE/2, MATRIX_SIZE/2};
     point tail = {MATRIX_SIZE/2, MATRIX_SIZE/2};
 
-    visited[head.x][head.y] = 1;
+    update_visited(&head);
 
     while (fscanf(file, " %c %d", &direction, &steps) == 2) {
         move_head(&head, &tail, direction, steps);
